@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI活用レベル診断</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --border: #2a2d3e;
+    --accent: #6ee7b7;
+    --accent2: #38bdf8;
+    --text: #e8eaf0;
+    --muted: #7b7f96;
+    --selected-bg: #1e3a3a;
+    --selected-border: #6ee7b7;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Sans JP', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background-image: radial-gradient(ellipse at 20% 20%, rgba(110,231,183,0.06) 0%, transparent 60%),
+                      radial-gradient(ellipse at 80% 80%, rgba(56,189,248,0.06) 0%, transparent 60%);
+  }
+
+  .container {
+    width: 100%;
+    max-width: 640px;
+  }
+
+  /* ===== INTRO ===== */
+  #intro {
+    text-align: center;
+    animation: fadeUp 0.6s ease both;
+  }
+
+  .label {
+    display: inline-block;
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    border-radius: 100px;
+    padding: 4px 14px;
+    margin-bottom: 28px;
+  }
+
+  h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(32px, 6vw, 52px);
+    line-height: 1.15;
+    margin-bottom: 16px;
+    background: linear-gradient(135deg, #e8eaf0 30%, #6ee7b7);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .subtitle {
+    color: var(--muted);
+    font-size: 15px;
+    line-height: 1.7;
+    margin-bottom: 40px;
+  }
+
+  .start-btn {
+    background: var(--accent);
+    color: #0f1117;
+    border: none;
+    border-radius: 12px;
+    padding: 16px 48px;
+    font-size: 16px;
+    font-weight: 700;
+    font-family: 'Noto Sans JP', sans-serif;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+    box-shadow: 0 0 30px rgba(110,231,183,0.3);
+  }
+
+  .start-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 40px rgba(110,231,183,0.5);
+  }
+
+  /* ===== QUIZ ===== */
+  #quiz { display: none; }
+
+  .progress-bar-wrap {
+    height: 3px;
+    background: var(--border);
+    border-radius: 100px;
+    margin-bottom: 32px;
+    overflow: hidden;
+  }
+
+  .progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 100px;
+    transition: width 0.4s ease;
+  }
+
+  .q-counter {
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 2px;
+    margin-bottom: 12px;
+  }
+
+  .q-text {
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 1.5;
+    margin-bottom: 28px;
+  }
+
+  .options {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 32px;
+  }
+
+  .option {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 20px;
+    cursor: pointer;
+    font-size: 15px;
+    font-family: 'Noto Sans JP', sans-serif;
+    color: var(--text);
+    text-align: left;
+    transition: border-color 0.15s, background 0.15s, transform 0.1s;
+  }
+
+  .option:hover {
+    border-color: var(--accent);
+    transform: translateX(4px);
+  }
+
+  .option.selected {
+    background: var(--selected-bg);
+    border-color: var(--selected-border);
+    color: var(--accent);
+    font-weight: 700;
+  }
+
+  .nav-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .nav-btn {
+    background: transparent;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 28px;
+    font-size: 14px;
+    font-family: 'Noto Sans JP', sans-serif;
+    color: var(--muted);
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s;
+  }
+
+  .nav-btn:hover:not(:disabled) {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .nav-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  .next-btn {
+    background: var(--accent);
+    color: #0f1117;
+    border: none;
+    border-radius: 10px;
+    padding: 12px 36px;
+    font-size: 15px;
+    font-weight: 700;
+    font-family: 'Noto Sans JP', sans-serif;
+    cursor: pointer;
+    transition: transform 0.15s, opacity 0.15s;
+    margin-left: auto;
+  }
+
+  .next-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+  .next-btn:not(:disabled):hover { transform: translateY(-2px); }
+
+  /* ===== RESULT ===== */
+  #result {
+    display: none;
+    text-align: center;
+    animation: fadeUp 0.6s ease both;
+  }
+
+  .score-display {
+    margin: 32px 0;
+    position: relative;
+    display: inline-block;
+  }
+
+  .score-circle {
+    width: 160px;
+    height: 160px;
+    border-radius: 50%;
+    background: conic-gradient(var(--accent) 0deg, var(--accent2) 0deg, var(--border) 0deg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 8px;
+    position: relative;
+    box-shadow: 0 0 60px rgba(110,231,183,0.2);
+  }
+
+  .score-circle::before {
+    content: '';
+    position: absolute;
+    width: 130px;
+    height: 130px;
+    border-radius: 50%;
+    background: var(--bg);
+  }
+
+  .score-num {
+    position: relative;
+    z-index: 1;
+    font-family: 'DM Serif Display', serif;
+    font-size: 52px;
+    line-height: 1;
+    color: var(--accent);
+  }
+
+  .score-max {
+    font-size: 16px;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+
+  .level-badge {
+    display: inline-block;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #0f1117;
+    font-weight: 900;
+    font-size: 18px;
+    border-radius: 100px;
+    padding: 8px 28px;
+    margin: 16px 0;
+  }
+
+  .level-desc {
+    color: var(--muted);
+    font-size: 15px;
+    line-height: 1.8;
+    max-width: 480px;
+    margin: 0 auto 36px;
+  }
+
+  .breakdown {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 32px;
+    text-align: left;
+  }
+
+  .breakdown h3 {
+    font-size: 13px;
+    letter-spacing: 2px;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+
+  .breakdown-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+    font-size: 14px;
+  }
+
+  .breakdown-item:last-child { margin-bottom: 0; }
+
+  .breakdown-q {
+    flex: 1;
+    color: var(--muted);
+    font-size: 13px;
+  }
+
+  .breakdown-score {
+    font-weight: 700;
+    color: var(--accent);
+    width: 40px;
+    text-align: right;
+  }
+
+  .bar-wrap {
+    width: 100px;
+    height: 4px;
+    background: var(--border);
+    border-radius: 100px;
+    overflow: hidden;
+  }
+
+  .bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 100px;
+    transition: width 1s ease 0.3s;
+  }
+
+  .retry-btn {
+    background: transparent;
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 36px;
+    font-size: 15px;
+    font-family: 'Noto Sans JP', sans-serif;
+    color: var(--muted);
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s;
+  }
+
+  .retry-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  /* ===== ANIMATIONS ===== */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .slide-in {
+    animation: fadeUp 0.4s ease both;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- INTRO -->
+  <div id="intro">
+    <div class="label">Self Check</div>
+    <h1>AI活用レベル<br>診断</h1>
+    <p class="subtitle">5つの質問に答えるだけで、<br>あなたの現在のAI活用レベルがわかります。<br>所要時間：約1〜2分</p>
+    <button class="start-btn" onclick="startQuiz()">診断スタート →</button>
+  </div>
+
+  <!-- QUIZ -->
+  <div id="quiz">
+    <div class="progress-bar-wrap">
+      <div class="progress-bar-fill" id="progressBar" style="width:0%"></div>
+    </div>
+    <div class="q-counter" id="qCounter">Q1 / 5</div>
+    <div class="q-text" id="qText"></div>
+    <div class="options" id="optionsWrap"></div>
+    <div class="nav-row">
+      <button class="nav-btn" id="prevBtn" onclick="prevQ()" disabled>← 戻る</button>
+      <button class="next-btn" id="nextBtn" onclick="nextQ()" disabled>次へ →</button>
+    </div>
+  </div>
+
+  <!-- RESULT -->
+  <div id="result">
+    <div class="label">診断結果</div>
+    <div class="score-display">
+      <div class="score-circle" id="scoreCircle">
+        <span class="score-num" id="scoreNum">0</span>
+      </div>
+      <div class="score-max">/ 15点</div>
+    </div>
+    <div class="level-badge" id="levelBadge"></div>
+    <p class="level-desc" id="levelDesc"></p>
+    <div class="breakdown" id="breakdown">
+      <h3>問題別スコア</h3>
+    </div>
+    <button class="retry-btn" onclick="restart()">もう一度診断する</button>
+  </div>
+
+</div>
+
+<script>
+const questions = [
+  {
+    text: "仕事でChatGPTやCopilotなどのAIツールを使っていますか？",
+    options: [
+      { label: "ほぼ毎日使っている", score: 3 },
+      { label: "週に数回使っている", score: 2 },
+      { label: "たまに使う程度", score: 1 },
+      { label: "ほとんど使っていない", score: 0 },
+    ]
+  },
+  {
+    text: "AIへの指示（プロンプト）を工夫して、より良い回答を引き出せていますか？",
+    options: [
+      { label: "意図した通りの回答を引き出せる", score: 3 },
+      { label: "なんとなく工夫している", score: 2 },
+      { label: "あまり工夫していない", score: 1 },
+      { label: "工夫の仕方がわからない", score: 0 },
+    ]
+  },
+  {
+    text: "AIを使って、実際の業務の効率が上がったと感じていますか？",
+    options: [
+      { label: "明らかに効率が上がった", score: 3 },
+      { label: "少し上がった気がする", score: 2 },
+      { label: "あまり変わらない", score: 1 },
+      { label: "まだ効果を感じていない", score: 0 },
+    ]
+  },
+  {
+    text: "AIをどんな用途で使っていますか？",
+    options: [
+      { label: "複数の業務で積極的に活用している", score: 3 },
+      { label: "文章作成や要約など特定の用途のみ", score: 2 },
+      { label: "調べ物や質問程度", score: 1 },
+      { label: "使い方がよくわからない", score: 0 },
+    ]
+  },
+  {
+    text: "AIについて、チームや同僚と情報共有や活用推進をしていますか？",
+    options: [
+      { label: "積極的に共有・推進している", score: 3 },
+      { label: "たまに話題にする", score: 2 },
+      { label: "自分だけで使っている", score: 1 },
+      { label: "特に何もしていない", score: 0 },
+    ]
+  }
+];
+
+const levels = [
+  { min: 0,  max: 4,  name: "入門レベル",  desc: "AIツールとの最初の一歩を踏み出す段階です。まずは日常業務の中でAIを試してみることで、その可能性を体感することができます。このウェビナーがきっかけになれば幸いです！" },
+  { min: 5,  max: 9,  name: "活用中レベル", desc: "AIをある程度使いこなしています。さらに一歩踏み込んで、プロンプトの工夫や複数の業務への応用を意識することで、大きな効率化が期待できます。" },
+  { min: 10, max: 15, name: "推進レベル",  desc: "AI活用の最前線にいます！個人の活用を超えて、チームや組織全体への展開・仕組み化にチャレンジする段階です。ぜひ周りへの情報発信も続けてください。" },
+];
+
+let current = 0;
+let answers = new Array(questions.length).fill(null);
+
+function startQuiz() {
+  document.getElementById('intro').style.display = 'none';
+  const quiz = document.getElementById('quiz');
+  quiz.style.display = 'block';
+  renderQuestion();
+}
+
+function renderQuestion() {
+  const q = questions[current];
+  document.getElementById('qCounter').textContent = `Q${current+1} / ${questions.length}`;
+  document.getElementById('progressBar').style.width = `${(current / questions.length) * 100}%`;
+
+  const qText = document.getElementById('qText');
+  qText.textContent = q.text;
+  qText.classList.remove('slide-in');
+  void qText.offsetWidth;
+  qText.classList.add('slide-in');
+
+  const wrap = document.getElementById('optionsWrap');
+  wrap.innerHTML = '';
+  q.options.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'option' + (answers[current] === i ? ' selected' : '');
+    btn.textContent = opt.label;
+    btn.onclick = () => selectOption(i);
+    wrap.appendChild(btn);
+  });
+
+  document.getElementById('prevBtn').disabled = current === 0;
+  document.getElementById('nextBtn').disabled = answers[current] === null;
+  document.getElementById('nextBtn').textContent = current === questions.length - 1 ? '結果を見る ✓' : '次へ →';
+}
+
+function selectOption(i) {
+  answers[current] = i;
+  document.querySelectorAll('.option').forEach((el, idx) => {
+    el.classList.toggle('selected', idx === i);
+  });
+  document.getElementById('nextBtn').disabled = false;
+}
+
+function nextQ() {
+  if (current < questions.length - 1) {
+    current++;
+    renderQuestion();
+  } else {
+    showResult();
+  }
+}
+
+function prevQ() {
+  if (current > 0) {
+    current--;
+    renderQuestion();
+  }
+}
+
+function showResult() {
+  document.getElementById('quiz').style.display = 'none';
+  const resultEl = document.getElementById('result');
+  resultEl.style.display = 'block';
+
+  const total = answers.reduce((sum, ans, i) => sum + (ans !== null ? questions[i].options[ans].score : 0), 0);
+  const level = levels.find(l => total >= l.min && total <= l.max);
+
+  // Score counter animation
+  const numEl = document.getElementById('scoreNum');
+  let count = 0;
+  const interval = setInterval(() => {
+    count++;
+    numEl.textContent = count;
+    if (count >= total) clearInterval(interval);
+  }, 60);
+
+  // Conic gradient for circle
+  const pct = (total / 15) * 360;
+  document.getElementById('scoreCircle').style.background =
+    `conic-gradient(#6ee7b7 0deg, #38bdf8 ${pct * 0.7}deg, #6ee7b7 ${pct}deg, #2a2d3e ${pct}deg)`;
+
+  document.getElementById('levelBadge').textContent = level.name;
+  document.getElementById('levelDesc').textContent = level.desc;
+
+  // Breakdown
+  const breakdown = document.getElementById('breakdown');
+  breakdown.innerHTML = '<h3>問題別スコア</h3>';
+  questions.forEach((q, i) => {
+    const ans = answers[i];
+    const s = ans !== null ? q.options[ans].score : 0;
+    const item = document.createElement('div');
+    item.className = 'breakdown-item';
+    item.innerHTML = `
+      <div class="breakdown-q">Q${i+1}. ${q.text.slice(0, 18)}…</div>
+      <div class="bar-wrap"><div class="bar-fill" style="width:0%" data-pct="${(s/3)*100}"></div></div>
+      <div class="breakdown-score">${s} / 3</div>
+    `;
+    breakdown.appendChild(item);
+  });
+
+  setTimeout(() => {
+    document.querySelectorAll('.bar-fill').forEach(el => {
+      el.style.width = el.dataset.pct + '%';
+    });
+  }, 100);
+}
+
+function restart() {
+  current = 0;
+  answers = new Array(questions.length).fill(null);
+  document.getElementById('result').style.display = 'none';
+  document.getElementById('intro').style.display = 'block';
+}
+</script>
+</body>
+</html>
